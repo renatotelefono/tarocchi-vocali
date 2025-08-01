@@ -1,16 +1,88 @@
 ---
-
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Tarocchi Vocali</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  </head>
+  <body>
+    <h1>🔮 Lettura Tarocchi Vocale</h1>
+    <button id="startBtn">🎤 Ascolta</button>
+    <p id="output">In attesa...</p>
+    <div id="cardContainer"></div>
+
+    <script type="module">
+      const cards = [
+        { name: "il matto", file: "RWS1909_-_00_Fool.jpeg", descr: "Rappresenta nuove avventure e libertà." },
+        { name: "il mago", file: "RWS1909_-_01_Magician.jpeg", descr: "Simbolo di creatività e azione." },
+        { name: "la papessa", file: "RWS1909_-_02_High_Priestess.jpeg", descr: "Invita alla saggezza interiore." },
+        { name: "l'imperatrice", file: "RWS1909_-_03_Empress.jpeg", descr: "Porta abbondanza, creatività e fertilità." },
+        { name: "l'imperatore", file: "RWS1909_-_04_Emperor.jpeg", descr: "Simbolo di stabilità, autorità e struttura." },
+        { name: "il papa", file: "RWS1909_-_05_Hierophant.jpeg", descr: "Indica guida spirituale, tradizione e apprendimento." },
+        { name: "gli amanti", file: "RWS1909_-_06_Lovers.jpeg", descr: "Rappresenta scelte importanti e unioni profonde." },
+        { name: "il carro", file: "RWS1909_-_07_Chariot.jpeg", descr: "Simbolo di vittoria, determinazione e controllo." },
+        { name: "la forza", file: "RWS1909_-_08_Strength.jpeg", descr: "Indica coraggio, autodisciplina e pazienza." },
+        { name: "l'eremita", file: "RWS1909_-_09_Hermit.jpeg", descr: "Rappresenta introspezione, ricerca interiore e saggezza." },
+        { name: "la ruota della fortuna", file: "RWS1909_-_10_Wheel_of_Fortune.jpeg", descr: "Indica cicli della vita, destino e cambiamenti." },
+        { name: "la giustizia", file: "RWS1909_-_11_Justice.jpeg", descr: "Simbolo di equilibrio, verità e responsabilità." },
+        { name: "l'appeso", file: "RWS1909_-_12_Hanged_Man.jpeg", descr: "Rappresenta attesa, sacrificio e nuova prospettiva." },
+        { name: "la morte", file: "RWS1909_-_13_Death.jpeg", descr: "Simbolo di trasformazione, fine e rinascita." },
+        { name: "la temperanza", file: "RWS1909_-_14_Temperance.jpeg", descr: "Indica armonia, moderazione e adattamento." },
+        { name: "il diavolo", file: "RWS1909_-_15_Devil.jpeg", descr: "Rappresenta illusioni, dipendenze e desideri materiali." },
+        { name: "la torre", file: "RWS1909_-_16_Tower.jpeg", descr: "Simbolo di crollo improvviso, cambiamento e rivelazione." },
+        { name: "la stella", file: "RWS1909_-_17_Star.jpeg", descr: "Indica speranza, ispirazione e guarigione." },
+        { name: "la luna", file: "RWS1909_-_18_Moon.jpeg", descr: "Rappresenta mistero, sogni e intuizione." },
+        { name: "il sole", file: "RWS1909_-_19_Sun.jpeg", descr: "Simbolo di gioia, chiarezza e successo." },
+        { name: "il giudizio", file: "RWS1909_-_20_Judgement.jpeg", descr: "Indica riflessione, risveglio e consapevolezza." },
+        { name: "il mondo", file: "RWS1909_-_21_World.jpeg", descr: "Rappresenta completamento, realizzazione e armonia." }// ... aggiungi tutte le altre carte qui
+      ];
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const synth = window.speechSynthesis;
+      const output = document.getElementById("output");
+      const cardContainer = document.getElementById("cardContainer");
+
+      let availableCards = [...cards];
+
+      if (!SpeechRecognition) {
+        alert("❌ Il tuo browser non supporta la Web Speech API");
+      } else {
+        const recognition = new SpeechRecognition();
+        recognition.lang = "it-IT";
+        recognition.interimResults = false;
+
+        document.getElementById("startBtn").addEventListener("click", () => {
+          console.log("🎤 Avvio microfono...");
+          recognition.start();
+          output.textContent = "🎧 Sto ascoltando...";
+        });
+
+        recognition.addEventListener("result", (event) => {
+          const transcript = event.results[0][0].transcript.toLowerCase();
+          console.log("✅ Riconosciuto:", transcript);
+          output.textContent = "Hai detto: " + transcript;
+
+          const index = availableCards.findIndex(c => transcript.includes(c.name));
+          if (index === -1) {
+            cardContainer.innerHTML = `<p style="color:red">Carta non trovata o già uscita</p>`;
+            return;
+          }
+
+          const card = availableCards.splice(index, 1)[0];
+          cardContainer.innerHTML = `
+            <div class="card visible" style="width:180px;height:280px;margin:30px auto;
+              border:2px solid #444;border-radius:8px;background-image:url('/cards_arcani_maggiori/${card.file}');
+              background-size:cover;background-position:center"></div>
+            <div style="font-weight:bold;font-size:24px;margin-top:15px">${card.name}</div>
+          `;
+
+          const utter = new SpeechSynthesisUtterance(`Hai scelto ${card.name}. ${card.descr}`);
+          utter.lang = "it-IT";
+          synth.speak(utter);
+        });
+      }
+    </script>
+  </body>
 </html>
