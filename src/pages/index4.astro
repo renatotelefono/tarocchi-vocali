@@ -1,3 +1,5 @@
+---
+---
 <html lang="it">
   <head>
     <meta charset="UTF-8" />
@@ -39,7 +41,8 @@
         height: 280px;
         border: 2px solid #444;
         border-radius: 8px;
-        object-fit: cover;
+        background-size: cover;
+        background-position: center;
         opacity: 0;
         transition: opacity 0.6s ease-in;
       }
@@ -61,14 +64,11 @@
         padding: 15px;
         border-radius: 8px;
         border: 1px solid #ddd;
-        opacity: 0;
-        transition: opacity 0.8s ease-in;
       }
-
-      #cardMarkdown.visible { opacity: 1; }
 
       .error { color: red; font-weight: bold; }
     </style>
+    <!-- Markdown parser -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   </head>
   <body>
@@ -142,7 +142,7 @@
           console.log("✅ Riconosciuto:", transcript);
           output.textContent = "Hai detto: " + transcript;
 
-          const index = availableCards.findIndex(c => transcript.includes(c.name.toLowerCase()));
+          const index = availableCards.findIndex(c => transcript.includes(c.name));
           if (index === -1) {
             cardContainer.innerHTML = `<p class="error">Carta non trovata o già uscita</p>`;
             return;
@@ -152,38 +152,36 @@
           usedCards.push(card.name);
           updateCounters();
 
-          // Mostra solo la carta per prima
+          // Mostra carta e placeholder descrizione
           cardContainer.innerHTML = `
             <div>
-              <img class="card visible" src="/cards_arcani_maggiori/${card.file}" alt="${card.name}">
+              <div class="card visible" style="background-image:url('/cards_arcani_maggiori/${card.file}')"></div>
               <div id="cardName">${card.name}</div>
             </div>
             <div id="cardMarkdown">Caricamento descrizione...</div>
           `;
-          const cardMarkdown = document.getElementById("cardMarkdown");
 
-          // Genera il nome file markdown
+          // Genera il nome file markdown: estrae "00_Fool" da "RWS1909_-_00_Fool.jpeg"
           const markdownFile = card.file.replace("RWS1909_-_", "").replace(".jpeg", ".md");
 
           // Carica markdown
           const res = await fetch('/descrizioni_arcani_maggiori/' + markdownFile);
           if (!res.ok) {
-            cardMarkdown.innerHTML = "<p class='error'>Descrizione non trovata</p>";
+            document.getElementById("cardMarkdown").innerHTML = "<p class='error'>Descrizione non trovata</p>";
             return;
           }
           let mdText = await res.text();
+
+          // 🔹 Rimuove eventuale frontmatter
           mdText = mdText.replace(/^---[\s\S]*?---/, "").trim();
 
-          // Attendi un attimo prima di mostrare la descrizione
-          setTimeout(() => {
-            cardMarkdown.innerHTML = marked.parse(mdText);
-            cardMarkdown.classList.add("visible");
+          // Mostra formattato
+          document.getElementById("cardMarkdown").innerHTML = marked.parse(mdText);
 
-            // Sintesi vocale
-            const utter = new SpeechSynthesisUtterance(mdText.replace(/[#*_>\-]/g,""));
-            utter.lang = "it-IT";
-            synth.speak(utter);
-          }, 1500); // 1.5 secondi di pausa
+          // Sintesi vocale (rimuovo simboli Markdown)
+          const utter = new SpeechSynthesisUtterance(mdText.replace(/[#*_>\-]/g,""));
+          utter.lang = "it-IT";
+          synth.speak(utter);
         });
       }
 
